@@ -1,0 +1,27 @@
+# vueOMS — AI development rules
+
+## Goal and scope
+Build the Laravel + Vue 3 Purchase Management System described in `docs/01-requirements.md`. This is a separate variant from `VMS/`; never merge the variants or work in the parent pack directory.
+
+## Authoritative architecture
+- Use conventional Laravel directories: `app/`, `routes/`, `database/`; do not use Bagisto-style domain packages.
+- Frontend UI is Vue 3 Single-File Components (`.vue`) using plain JavaScript under `resources/js/`, with Vue Router, Pinia and TanStack Vue Query. Use VeeValidate + Zod for forms/validation.
+- Blade is only an optional minimal SPA mount shell, never item UI.
+- Use one root `composer.json` and one root `package.json`; no nested manifests.
+- API and domain rules remain as documented in `docs/00–05`.
+
+## Autonomy / pre-approved decisions
+Do not ask for approval for these decisions: PHP `^8.2`, Laravel `^12.0`, MySQL `8.0+`, Node `20.19+`, Sanctum `^4.0`, Spatie Laravel Permission `^6.0`; conventional Laravel `app/`, `routes/`, `database/`; Vue `^3.5`, Vue Router `^4.5`, Pinia `^2.3`, TanStack Vue Query `^5.90`, VeeValidate `^4.15` + Zod `^3.25.0`, Vite `^6.4`, Tailwind CSS `^4.1` + `@tailwindcss/vite`; Vitest `^2.1` + `@vue/test-utils` `^2.4`, Playwright `^1.56` + axe-core Playwright `^4.10`, ESLint `^9` with `eslint-plugin-vue` `^10` and `vue-eslint-parser` `^10`, Prettier `^3`, Pest `^3.8`, Pest Laravel plugin `^3.2`, PHPUnit `^11`, Pint `^1.24` and Larastan `^3.0`. Use seeded local-only QA accounts `admin@oms.test`, `manager@oms.test`, and `staff@oms.test` with password `password` only in the isolated test database; never use these credentials outside local/test environments. Keep tests aligned with `docs/10-testid-contract.md`. Only ask before destructive/irreversible actions or changing this list; otherwise proceed.
+
+## Distinct item identity (pre-approved)
+This variant must have a visibly different item experience from the sibling VMS React item. Do not reuse its design tokens, component implementations, page composition, navigation geometry, or CSS class recipes. The distinction is a item-quality requirement, not a cosmetic afterthought.
+- Visual direction: warm paper-like light surfaces, evergreen/teal primary actions, restrained amber status accents, generous whitespace, clear section headings, card-based summaries, and calm typography. Avoid the sibling's dense navy/compact enterprise-table visual language.
+- Interaction direction: task-oriented overview cards, contextual side panels/drawers for record details, progressive disclosure for complex forms, and responsive mobile-first navigation.
+- Implementation identity: Vue Composition API, feature folders, `.vue` SFCs with plain JavaScript, composables for reusable behavior, Pinia only for cross-screen client state, TanStack Vue Query for server state, and VeeValidate + Zod for forms. Use JSDoc for important public functions and Zod/runtime validation for API boundaries. No TypeScript in `resources/js/**` application source.
+- Keep requirements, API contracts, and business outcomes consistent where needed; do not alter schema or rules merely to create superficial differences. Implement independently in Vue rather than porting sibling UI/source files.
+
+## Required work discipline
+Read this file and relevant docs before each phase. Preserve assessment requirements. Do not change business rules, API contracts, schema, permission matrix, or docs/00–05 requirements without explicit direction. Do not claim tests/builds passed unless actually run.
+
+## UI/UX and frontend code identity
+Follow `docs/14-vueoms-item-identity.md`. Application frontend code under `resources/js/**` must be plain JavaScript and Vue SFCs, not TypeScript. Use the warm light, evergreen/teal and restrained amber design system; do not reuse the sibling VMS React UI or component implementations. TypeScript is permitted only for Playwright tooling under `qa-kit/e2e/`.

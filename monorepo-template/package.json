@@ -1,0 +1,49 @@
+{
+  "name": "vue-oms-monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "find resources/js -name '*.js' -print0 | xargs -0 -n1 node --check",
+    "typecheck:e2e": "tsc --noEmit -p qa-kit/e2e/tsconfig.json",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "e2e": "playwright test -c qa-kit/e2e/playwright.config.ts"
+  },
+  "dependencies": {
+    "@tanstack/vue-query": "^5.90.2",
+    "chart.js": "^4.5.1",
+    "pinia": "^2.3.1",
+    "vee-validate": "^4.15.1",
+    "vue": "^3.5.22",
+    "vue-chartjs": "^5.3.2",
+    "vue-router": "^4.5.1",
+    "zod": "^3.25.0",
+    "@vee-validate/zod": "^4.15.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.56.1",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@vue/test-utils": "^2.4.6",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.38.0",
+    "eslint-plugin-vue": "^10.5.1",
+    "jsdom": "^27.0.0",
+    "laravel-vite-plugin": "^1.3.0",
+    "prettier": "^3.6.2",
+    "tailwindcss": "^4.1.16",
+    "vite": "^6.4.1",
+    "vitest": "^2.1.9",
+    "vue-eslint-parser": "^10.2.0",
+    "@tailwindcss/vite": "^4.1.16",
+    "@eslint/js": "^9.38.0",
+    "@types/node": "^22.18.10",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2"
+  }
+}
