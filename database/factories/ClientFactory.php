@@ -12,7 +12,10 @@ class ClientFactory extends Factory
     public function definition(): array
     {
         return [
-            // Definition can be filled as needed
+            'name' => $this->faker->name(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'phone' => $this->faker->phoneNumber(),
+            'address' => $this->faker->address(),
         ];
     }
 }
