@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="vendor/autoload.php" colors="true" cacheDirectory=".phpunit.cache">
-  <testsuites>
-    <testsuite name="Root"><directory>tests</directory></testsuite>
-    <testsuite name="QA Kit Feature"><directory>qa-kit/tests/Feature</directory></testsuite>
-    <testsuite name="QA Kit Unit"><directory>qa-kit/tests/Unit</directory></testsuite>
-  </testsuites>
-</phpunit>
