@@ -51,4 +51,5 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Reports (Admin / Manager)
     Route::get('/reports', App\Http\Controllers\Report\GetReportsController::class);
+    Route::get('/reports/export', App\Http\Controllers\Report\ExportReportController::class);
 });

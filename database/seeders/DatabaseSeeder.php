@@ -102,25 +102,55 @@ class DatabaseSeeder extends Seeder
         }
 
         // 5. Purchases
-        $client = Client::first();
-        $item = Item::first();
+        $allClients = Client::all();
+        $allItems = Item::all();
+        $statuses = ['completed', 'confirmed', 'processing', 'ready', 'pending', 'cancelled'];
         
-        if (!Purchase::where('purchase_number', 'PUR-001')->exists()) {
-            $purchase = Purchase::create([
-                'purchase_number' => 'PUR-001',
-                'client_id' => $client->id,
-                'purchase_date' => now(),
-                'status' => 'pending',
-                'total_amount' => $item->price * 2
-            ]);
+        $purchaseDates = [
+            '2026-10-10', '2026-10-08', '2026-10-05', '2026-10-01',
+            '2026-09-25', '2026-09-15', '2026-09-02', '2026-08-20',
+            '2026-08-10', '2026-07-14', '2026-06-30', '2026-05-18',
+            '2026-04-12', '2026-03-22', '2026-02-15', '2026-01-10',
+            '2025-12-20', '2025-11-15', '2025-10-05', '2025-08-14',
+        ];
 
-            PurchaseLine::create([
-                'purchase_id' => $purchase->id,
-                'item_id' => $item->id,
-                'quantity' => 2,
-                'unit_price' => $item->price,
-                'subtotal' => $item->price * 2
-            ]);
+        for ($k = 0; $k < count($purchaseDates); $k++) {
+            $pNum = sprintf('PUR-%03d', $k + 1);
+            if (!Purchase::where('purchase_number', $pNum)->exists()) {
+                $client = $allClients[$k % count($allClients)];
+                $status = $statuses[$k % count($statuses)];
+                $date = $purchaseDates[$k];
+
+                $purchase = Purchase::create([
+                    'purchase_number' => $pNum,
+                    'client_id' => $client->id,
+                    'purchase_date' => $date,
+                    'status' => $status,
+                    'priority' => ($k % 3 === 0) ? 'high' : 'normal',
+                    'total_amount' => 0,
+                ]);
+
+                // Create 1 to 3 line items
+                $numLines = ($k % 3) + 1;
+                $runningTotal = 0;
+                for ($lineIdx = 0; $lineIdx < $numLines; $lineIdx++) {
+                    $item = $allItems[($k + $lineIdx) % count($allItems)];
+                    $qty = ($lineIdx + 1) * 2;
+                    $unitPrice = (float) $item->price;
+                    $subtotal = $qty * $unitPrice;
+                    $runningTotal += $subtotal;
+
+                    PurchaseLine::create([
+                        'purchase_id' => $purchase->id,
+                        'item_id' => $item->id,
+                        'quantity' => $qty,
+                        'unit_price' => $unitPrice,
+                        'subtotal' => $subtotal,
+                    ]);
+                }
+
+                $purchase->update(['total_amount' => $runningTotal]);
+            }
         }
     }
 }

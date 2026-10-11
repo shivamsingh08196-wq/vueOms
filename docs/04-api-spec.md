@@ -127,6 +127,29 @@ Client-sent `unit_price`, `subtotal`, `tax`, `total` are **ignored**. Initial st
 
 Revenue definition: sum of `total` of purchases with status `completed` (document this; alternative: confirmed+). Cache 60s per params.
 
+## Reports (`reports.view`: Admin, Manager)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | /reports | aggregated report payload for the active filters |
+| GET | /reports/export | streams a downloadable file (`type`, `format`, filters) |
+
+Shared filters (query params on both endpoints): `status`, `year`, `month` (1–12), `start_date`, `end_date`, `client_id`, `item_id`. `all` or empty means "no constraint"; dates filter on `purchase_date`.
+
+`GET /reports` returns:
+`summary{total_revenue,total_purchases,total_clients,total_items,total_items_sold,avg_order_value}`,
+`purchases_by_status[{status,count,revenue}]`,
+`top_products_by_quantity[]` and `top_products_by_price[]` (`item_id,item_name,sku,unit_price,current_stock,total_quantity,total_revenue,orders_count`),
+`top_clients_by_orders[]` and `top_clients_by_price[]` (`client_id,client_name,email,phone,orders_count,total_spent`),
+`per_client_report[]` (`client_id,client_name,email,phone,orders_count,total_spent,avg_order_value,latest_purchase_date,total_units_purchased`),
+`per_product_report[]` (`item_id,item_name,sku,unit_price,current_stock,orders_count,total_quantity_sold,total_revenue`),
+`filter_options{years[],months[{value,name}],statuses[],clients[{id,name,email}],items[{id,name,sku}]}`.
+
+`GET /reports/export`:
+- `type` ∈ `overview` (default), `top_products_quantity`, `top_products_price`, `top_clients_orders`, `top_clients_price`, `per_client`, `per_product`
+- `format` ∈ `csv` (UTF-8 BOM), `xls` (BIFF8), `xlsx` (OOXML), `pdf` (DomPDF)
+- applies the same filters and responds as an attachment (auth header required, so the SPA downloads via authenticated `fetch`, not a plain link).
+
 ## Audit logs (`audit.view`: Admin)
 
 `GET /audit-logs?user_id&action&auditable_type&auditable_id&date_from&date_to&page`
