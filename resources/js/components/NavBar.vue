@@ -19,11 +19,14 @@ const logout = () => {
           <div class="flex flex-shrink-0 items-center">
             <span class="text-[var(--color-evergreen)] font-bold text-xl">vueVMS</span>
           </div>
-          <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+          <div class="hidden sm:ml-6 sm:flex sm:space-x-6">
             <router-link to="/dashboard" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-[var(--color-muted)] hover:border-[var(--color-line)] hover:text-[var(--color-ink)]" active-class="border-[var(--color-evergreen)] text-[var(--color-ink)]">Dashboard</router-link>
             <router-link to="/purchases" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-[var(--color-muted)] hover:border-[var(--color-line)] hover:text-[var(--color-ink)]" active-class="border-[var(--color-evergreen)] text-[var(--color-ink)]">Purchases</router-link>
             <router-link to="/clients" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-[var(--color-muted)] hover:border-[var(--color-line)] hover:text-[var(--color-ink)]" active-class="border-[var(--color-evergreen)] text-[var(--color-ink)]">Clients</router-link>
             <router-link to="/items" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-[var(--color-muted)] hover:border-[var(--color-line)] hover:text-[var(--color-ink)]" active-class="border-[var(--color-evergreen)] text-[var(--color-ink)]">Items</router-link>
+            <router-link to="/reports" v-if="auth.isAdmin || auth.isManager || auth.can('reports.view')" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-[var(--color-muted)] hover:border-[var(--color-line)] hover:text-[var(--color-ink)]" active-class="border-[var(--color-evergreen)] text-[var(--color-ink)]">Reports</router-link>
+            <router-link to="/users" v-if="auth.isAdmin || auth.can('users.manage')" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-[var(--color-muted)] hover:border-[var(--color-line)] hover:text-[var(--color-ink)]" active-class="border-[var(--color-evergreen)] text-[var(--color-ink)]">Users</router-link>
+            <router-link to="/audit-logs" v-if="auth.isAdmin || auth.can('audit.view')" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-[var(--color-muted)] hover:border-[var(--color-line)] hover:text-[var(--color-ink)]" active-class="border-[var(--color-evergreen)] text-[var(--color-ink)]">Audit Logs</router-link>
           </div>
         </div>
         <div class="flex items-center gap-4">

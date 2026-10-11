@@ -37,6 +37,21 @@ const routes = [
         path: 'purchases',
         name: 'Purchases',
         component: () => import('./pages/PurchasesKanban.vue')
+      },
+      {
+        path: 'reports',
+        name: 'Reports',
+        component: () => import('./pages/Reports.vue')
+      },
+      {
+        path: 'users',
+        name: 'Users',
+        component: () => import('./pages/UsersList.vue')
+      },
+      {
+        path: 'audit-logs',
+        name: 'AuditLogs',
+        component: () => import('./pages/AuditLogs.vue')
       }
     ]
   }

@@ -30,7 +30,7 @@ describe('Auth Store', () => {
     await auth.login({ email: 'admin@vueoms.com', password: 'password' });
     expect(auth.isAuthenticated).toBe(true);
 
-    auth.logout();
+    await auth.logout();
     expect(auth.isAuthenticated).toBe(false);
     expect(auth.user).toBeNull();
     expect(auth.token).toBeNull();

@@ -20,6 +20,7 @@ return new class extends Migration
         Schema::create('items', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('sku')->nullable();
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
             $table->integer('stock')->default(0);
@@ -30,9 +31,12 @@ return new class extends Migration
             $table->id();
             $table->string('purchase_number')->unique();
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
             $table->date('purchase_date');
             $table->decimal('total_amount', 12, 2)->default(0);
             $table->string('status')->default('pending');
+            $table->string('priority')->default('normal');
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
 
@@ -59,7 +63,8 @@ return new class extends Migration
             $table->foreignId('purchase_id')->constrained()->cascadeOnDelete();
             $table->string('old_status')->nullable();
             $table->string('new_status');
-            $table->foreignId('changed_by_user_id')->constrained('users')->cascadeOnDelete();
+            $table->text('remarks')->nullable();
+            $table->foreignId('changed_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
 

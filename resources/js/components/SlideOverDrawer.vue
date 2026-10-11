@@ -4,7 +4,11 @@ import { computed } from 'vue';
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    required: true,
+    default: false,
+  },
+  isOpen: {
+    type: Boolean,
+    default: false,
   },
   title: {
     type: String,
@@ -12,16 +16,19 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'close']);
+
+const isVisible = computed(() => props.modelValue || props.isOpen);
 
 const close = () => {
   emit('update:modelValue', false);
+  emit('close');
 };
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="modelValue" class="relative z-40" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+    <div v-if="isVisible" class="relative z-40" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
       <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="close"></div>
       <div class="fixed inset-0 overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">

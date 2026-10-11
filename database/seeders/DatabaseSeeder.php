@@ -16,19 +16,53 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Roles and Permissions
-        $permissions = ['view', 'create', 'update', 'delete'];
-        foreach ($permissions as $p) {
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $allPermissions = [
+            'users.manage',
+            'roles.manage',
+            'customers.view',
+            'customers.manage',
+            'products.view',
+            'products.manage',
+            'orders.view_all',
+            'orders.view_assigned',
+            'orders.create',
+            'orders.update',
+            'orders.delete',
+            'orders.assign',
+            'orders.change_status',
+            'orders.add_note',
+            'dashboard.view',
+            'reports.view',
+            'audit.view',
+            'view',
+            'create',
+            'update',
+            'delete',
+        ];
+
+        foreach ($allPermissions as $p) {
             Permission::firstOrCreate(['name' => $p]);
         }
 
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $adminRole->givePermissionTo($permissions);
+        $adminRole->syncPermissions($allPermissions);
 
         $managerRole = Role::firstOrCreate(['name' => 'manager']);
-        $managerRole->givePermissionTo(['view', 'create', 'update']);
+        $managerRole->syncPermissions([
+            'customers.view', 'customers.manage', 'products.view',
+            'orders.view_all', 'orders.create', 'orders.update',
+            'orders.assign', 'orders.change_status', 'orders.add_note',
+            'dashboard.view', 'reports.view', 'view', 'create', 'update',
+        ]);
 
         $staffRole = Role::firstOrCreate(['name' => 'staff']);
-        $staffRole->givePermissionTo(['view', 'create']);
+        $staffRole->syncPermissions([
+            'customers.view', 'products.view',
+            'orders.view_assigned', 'orders.change_status', 'orders.add_note',
+            'view', 'create',
+        ]);
 
         // 2. Users
         $admin = User::firstOrCreate(['email' => 'admin@vueoms.com'], [

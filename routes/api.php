@@ -32,4 +32,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/purchases', App\Http\Controllers\Purchase\CreatePurchaseController::class);
     Route::put('/purchases/{purchase}', App\Http\Controllers\Purchase\UpdatePurchaseController::class);
     Route::delete('/purchases/{purchase}', App\Http\Controllers\Purchase\DeletePurchaseController::class);
+    Route::post('/purchases/{purchase}/status', App\Http\Controllers\Purchase\ChangePurchaseStatusController::class);
+    Route::post('/purchases/{purchase}/assign', App\Http\Controllers\Purchase\AssignPurchaseController::class);
+
+    // Users (Admin)
+    Route::get('/users', App\Http\Controllers\User\GetUsersController::class);
+    Route::post('/users', App\Http\Controllers\User\CreateUserController::class);
+    Route::get('/users/{user}', App\Http\Controllers\User\GetUserController::class);
+    Route::put('/users/{user}', App\Http\Controllers\User\UpdateUserController::class);
+    Route::delete('/users/{user}', App\Http\Controllers\User\DeleteUserController::class);
+
+    // Roles & Permissions (Admin)
+    Route::get('/roles', App\Http\Controllers\Role\GetRolesController::class);
+    Route::put('/roles/{role}/permissions', App\Http\Controllers\Role\UpdateRolePermissionsController::class);
+
+    // Audit Logs (Admin)
+    Route::get('/audit-logs', App\Http\Controllers\Audit\GetAuditLogsController::class);
+
+    // Reports (Admin / Manager)
+    Route::get('/reports', App\Http\Controllers\Report\GetReportsController::class);
 });
