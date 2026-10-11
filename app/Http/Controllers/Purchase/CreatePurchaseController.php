@@ -30,12 +30,14 @@ class CreatePurchaseController extends Controller {
             
             $total = 0;
             foreach ($data['lines'] as $line) {
-                $subtotal = $line['quantity'] * $line['unit_price'];
+                $item = \App\Models\Item::findOrFail($line['item_id']);
+                $unitPrice = $item->price;
+                $subtotal = $line['quantity'] * $unitPrice;
                 $total += $subtotal;
                 $purchase->lines()->create([
                     'item_id' => $line['item_id'],
                     'quantity' => $line['quantity'],
-                    'unit_price' => $line['unit_price'],
+                    'unit_price' => $unitPrice,
                     'subtotal' => $subtotal
                 ]);
             }

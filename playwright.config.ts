@@ -17,4 +17,10 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
+  webServer: {
+    command: 'php artisan serve --port=8001 --no-reload',
+    url: 'http://localhost:8001/api/health',
+    reuseExistingServer: true,
+    timeout: 30_000,
+  },
 });
