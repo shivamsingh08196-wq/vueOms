@@ -12,14 +12,38 @@ class GetUsersController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
-        $users = User::with('roles')
-            ->when($request->search, function ($q, $search) {
+        $query = User::with('roles');
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
-            })
-            ->latest()
-            ->paginate($request->input('per_page', 15));
+            });
+        }
 
-        return response()->json($users);
+        $allowedSorts = ['id', 'name', 'email', 'created_at', 'updated_at'];
+        $sort = in_array($request->input('sort'), $allowedSorts, true) ? $request->input('sort') : 'created_at';
+        $direction = strtolower($request->input('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $query->orderBy($sort, $direction);
+
+        $perPage = max(1, min(100, (int) $request->input('per_page', 10)));
+        $paginated = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $paginated->items(),
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'from' => $paginated->firstItem(),
+                'to' => $paginated->lastItem(),
+            ],
+            'current_page' => $paginated->currentPage(),
+            'last_page' => $paginated->lastPage(),
+            'per_page' => $paginated->perPage(),
+            'total' => $paginated->total(),
+        ]);
     }
 }

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import api from '../api/client';
 import { useAuthStore } from '../stores/auth';
 import SlideOverDrawer from '../components/SlideOverDrawer.vue';
@@ -7,11 +7,19 @@ import SlideOverDrawer from '../components/SlideOverDrawer.vue';
 const auth = useAuthStore();
 const activeTab = ref('users'); // 'users' or 'roles'
 
-// Users State
+// Server-side Users State
 const users = ref([]);
 const isLoadingUsers = ref(true);
 const userError = ref('');
 const searchQuery = ref('');
+const currentPage = ref(1);
+const perPage = ref(10);
+const sortColumn = ref('created_at');
+const sortDirection = ref('desc');
+const totalRecords = ref(0);
+const lastPage = ref(1);
+const fromRecord = ref(0);
+const toRecord = ref(0);
 
 // User Drawer State
 const isUserDrawerOpen = ref(false);
@@ -34,28 +42,70 @@ const editingRole = ref(null);
 const selectedPermissions = ref([]);
 const isSavingRole = ref(false);
 
-const filteredUsers = computed(() => {
-  if (!searchQuery.value.trim()) return users.value;
-  const q = searchQuery.value.toLowerCase();
-  return users.value.filter(u =>
-    u.name?.toLowerCase().includes(q) ||
-    u.email?.toLowerCase().includes(q) ||
-    u.roles?.some(r => r.name.toLowerCase().includes(q))
-  );
-});
+let debounceTimer = null;
 
 const fetchUsers = async () => {
   isLoadingUsers.value = true;
   userError.value = '';
   try {
-    const data = await api.get('/api/users');
-    users.value = Array.isArray(data) ? data : (data.data || []);
+    const params = new URLSearchParams({
+      page: String(currentPage.value),
+      per_page: String(perPage.value),
+      sort: sortColumn.value,
+      direction: sortDirection.value,
+    });
+    if (searchQuery.value.trim()) {
+      params.append('search', searchQuery.value.trim());
+    }
+
+    const res = await api.get(`/api/users?${params.toString()}`);
+    if (res && res.data) {
+      users.value = res.data;
+      totalRecords.value = res.total ?? res.meta?.total ?? res.data.length;
+      lastPage.value = res.last_page ?? res.meta?.last_page ?? 1;
+      fromRecord.value = res.from ?? res.meta?.from ?? (users.value.length ? 1 : 0);
+      toRecord.value = res.to ?? res.meta?.to ?? users.value.length;
+    } else {
+      users.value = Array.isArray(res) ? res : [];
+      totalRecords.value = users.value.length;
+      lastPage.value = 1;
+    }
   } catch (err) {
     userError.value = err.message || 'Failed to load users.';
   } finally {
     isLoadingUsers.value = false;
   }
 };
+
+const handleSearchInput = () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    currentPage.value = 1;
+    fetchUsers();
+  }, 300);
+};
+
+const toggleSort = (col) => {
+  if (sortColumn.value === col) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortColumn.value = col;
+    sortDirection.value = 'desc';
+  }
+  currentPage.value = 1;
+  fetchUsers();
+};
+
+const goToPage = (p) => {
+  if (p < 1 || p > lastPage.value || p === currentPage.value) return;
+  currentPage.value = p;
+  fetchUsers();
+};
+
+watch(perPage, () => {
+  currentPage.value = 1;
+  fetchUsers();
+});
 
 const fetchRoles = async () => {
   isLoadingRoles.value = true;
@@ -227,7 +277,7 @@ onMounted(() => {
             'whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm'
           ]"
         >
-          Users List ({{ users.length }})
+          Users List ({{ totalRecords }})
         </button>
         <button
           @click="activeTab = 'roles'"
@@ -245,24 +295,37 @@ onMounted(() => {
 
     <!-- USERS TAB -->
     <div v-if="activeTab === 'users'" class="space-y-4">
-      <!-- Search & Filters -->
-      <div class="flex flex-col sm:flex-row gap-3">
-        <div class="relative flex-1">
+      <!-- Search & Limit Controls -->
+      <div class="flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div class="relative flex-1 w-full sm:max-w-md">
           <input
             v-model="searchQuery"
+            @input="handleSearchInput"
             type="text"
             data-testid="user-search-input"
             placeholder="Search by name, email, or role..."
             class="w-full rounded-lg border border-[var(--color-line)] bg-white px-4 py-2 text-sm text-[var(--color-ink)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-evergreen)]"
           />
         </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <label class="text-xs text-[var(--color-muted)] font-medium">Rows per page:</label>
+          <select
+            v-model.number="perPage"
+            class="rounded-lg border border-[var(--color-line)] bg-white px-3 py-1.5 text-xs text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-evergreen)]"
+          >
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+          </select>
+        </div>
       </div>
 
       <!-- Users Table -->
       <div class="rounded-xl border border-[var(--color-line)] bg-white overflow-hidden shadow-sm">
-        <div v-if="isLoadingUsers" class="p-8 text-center text-sm text-[var(--color-muted)]">
+        <div v-if="isLoadingUsers" class="p-12 text-center text-sm text-[var(--color-muted)]">
           <div class="animate-spin inline-block w-6 h-6 border-[3px] border-current border-t-transparent text-[var(--color-evergreen)] rounded-full mb-2"></div>
-          <div>Loading users...</div>
+          <div>Loading users from server...</div>
         </div>
 
         <div v-else-if="userError" class="p-8 text-center text-sm text-red-600">
@@ -270,7 +333,7 @@ onMounted(() => {
           <button @click="fetchUsers" class="mt-2 text-sm font-medium underline text-[var(--color-evergreen)]">Retry</button>
         </div>
 
-        <div v-else-if="filteredUsers.length === 0" class="p-8 text-center text-sm text-[var(--color-muted)]">
+        <div v-else-if="users.length === 0" class="p-12 text-center text-sm text-[var(--color-muted)]">
           No users found.
         </div>
 
@@ -278,15 +341,30 @@ onMounted(() => {
           <table class="w-full text-left text-sm" data-testid="users-table">
             <thead class="bg-gray-50 border-b border-[var(--color-line)] text-xs uppercase text-[var(--color-muted)]">
               <tr>
-                <th class="px-6 py-3 font-semibold">User</th>
-                <th class="px-6 py-3 font-semibold">Email</th>
+                <th @click="toggleSort('name')" class="px-6 py-3 font-semibold cursor-pointer hover:text-[var(--color-ink)] select-none">
+                  <div class="flex items-center gap-1.5">
+                    <span>User</span>
+                    <span v-if="sortColumn === 'name'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                  </div>
+                </th>
+                <th @click="toggleSort('email')" class="px-6 py-3 font-semibold cursor-pointer hover:text-[var(--color-ink)] select-none">
+                  <div class="flex items-center gap-1.5">
+                    <span>Email</span>
+                    <span v-if="sortColumn === 'email'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                  </div>
+                </th>
                 <th class="px-6 py-3 font-semibold">Role</th>
-                <th class="px-6 py-3 font-semibold">Created</th>
+                <th @click="toggleSort('created_at')" class="px-6 py-3 font-semibold cursor-pointer hover:text-[var(--color-ink)] select-none">
+                  <div class="flex items-center gap-1.5">
+                    <span>Created</span>
+                    <span v-if="sortColumn === 'created_at'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                  </div>
+                </th>
                 <th class="px-6 py-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--color-line)]">
-              <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-gray-50 transition-colors">
+              <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50 transition-colors">
                 <td class="px-6 py-4 font-medium text-[var(--color-ink)]">
                   <div class="flex items-center gap-3">
                     <div class="h-8 w-8 rounded-full bg-emerald-100 text-[var(--color-evergreen)] flex items-center justify-center font-bold text-xs uppercase">
@@ -311,10 +389,10 @@ onMounted(() => {
                     {{ role.name }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-[var(--color-muted)] text-xs">
-                  {{ new Date(user.created_at).toLocaleDateString() }}
+                <td class="px-6 py-4 text-[var(--color-muted)] text-xs font-mono">
+                  {{ user.created_at ? new Date(user.created_at).toLocaleDateString() : '—' }}
                 </td>
-                <td class="px-6 py-4 text-right space-x-2">
+                <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                   <button
                     @click="openEditUserDrawer(user)"
                     class="text-xs font-medium text-[var(--color-evergreen)] hover:underline"
@@ -332,13 +410,39 @@ onMounted(() => {
               </tr>
             </tbody>
           </table>
+
+          <!-- Server Pagination Bar -->
+          <div class="px-6 py-3.5 bg-gray-50 border-t border-[var(--color-line)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--color-muted)]">
+            <div>
+              Showing <span class="font-semibold text-gray-800">{{ fromRecord }}</span> to <span class="font-semibold text-gray-800">{{ toRecord }}</span> of <span class="font-semibold text-gray-800">{{ totalRecords }}</span> users
+            </div>
+            <div class="flex items-center gap-1">
+              <button
+                @click="goToPage(currentPage - 1)"
+                :disabled="currentPage <= 1"
+                class="px-3 py-1.5 rounded border border-[var(--color-line)] bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium"
+              >
+                Previous
+              </button>
+              <div class="px-2 font-semibold text-gray-700">
+                Page {{ currentPage }} of {{ lastPage }}
+              </div>
+              <button
+                @click="goToPage(currentPage + 1)"
+                :disabled="currentPage >= lastPage"
+                class="px-3 py-1.5 rounded border border-[var(--color-line)] bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ROLES & PERMISSIONS TAB -->
     <div v-else class="space-y-6">
-      <div v-if="isLoadingRoles" class="p-8 text-center text-sm text-[var(--color-muted)]">
+      <div v-if="isLoadingRoles" class="p-12 text-center text-sm text-[var(--color-muted)]">
         Loading roles and permissions...
       </div>
       <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
