@@ -19,7 +19,6 @@ class GetReportsController extends Controller
             abort(403, 'Unauthorized.');
         }
 
-        // Shared filter closure
         $applyFilters = function ($query, string $table = 'purchases') use ($request) {
             if ($request->filled('status') && $request->status !== 'all') {
                 $query->where("{$table}.status", $request->status);
@@ -49,7 +48,6 @@ class GetReportsController extends Controller
             }
         };
 
-        // 1. KPI Summary
         $basePurchasesQuery = DB::table('purchases');
         $applyFilters($basePurchasesQuery, 'purchases');
 
@@ -57,7 +55,6 @@ class GetReportsController extends Controller
         $totalPurchases = (int) (clone $basePurchasesQuery)->count();
         $avgOrderValue = $totalPurchases > 0 ? ($totalRevenue / $totalPurchases) : 0;
 
-        // Items sold quantity
         $itemsSoldQuery = DB::table('purchase_lines')
             ->join('purchases', 'purchase_lines.purchase_id', '=', 'purchases.id');
         $applyFilters($itemsSoldQuery, 'purchases');
@@ -241,7 +238,7 @@ class GetReportsController extends Controller
 
         // 8. Filter Metadata Options
         $years = DB::table('purchases')
-            ->select(DB::raw('DISTINCT strftime("%Y", purchase_date) as year'))
+            ->select(DB::raw('DISTINCT YEAR(purchase_date) as year'))
             ->whereNotNull('purchase_date')
             ->orderByDesc('year')
             ->pluck('year')

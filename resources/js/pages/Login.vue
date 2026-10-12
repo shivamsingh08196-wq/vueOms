@@ -45,7 +45,7 @@ const onSubmit = handleSubmit(async (values) => {
         <div>
           <label for="email" class="block text-sm font-medium leading-6 text-[var(--color-ink)]">Email address</label>
           <div class="mt-2">
-            <input id="email" v-model="email" type="email" autocomplete="email" class="block w-full rounded-md border-0 py-1.5 text-[var(--color-ink)] shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[var(--color-amber)] sm:text-sm sm:leading-6" />
+            <input id="email" v-model="email" type="email" autocomplete="email" class="block w-full rounded-md border-0 py-1.5 text-[var(--color-ink)] shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6" />
             <span class="text-red-500 text-xs mt-1">{{ errors.email }}</span>
           </div>
         </div>
@@ -53,7 +53,7 @@ const onSubmit = handleSubmit(async (values) => {
         <div>
           <label for="password" class="block text-sm font-medium leading-6 text-[var(--color-ink)]">Password</label>
           <div class="mt-2">
-            <input id="password" v-model="password" type="password" autocomplete="current-password" class="block w-full rounded-md border-0 py-1.5 text-[var(--color-ink)] shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[var(--color-amber)] sm:text-sm sm:leading-6" />
+            <input id="password" v-model="password" type="password" autocomplete="current-password" class="block w-full rounded-md border-0 py-1.5 text-[var(--color-ink)] shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6" />
             <span class="text-red-500 text-xs mt-1">{{ errors.password }}</span>
           </div>
         </div>

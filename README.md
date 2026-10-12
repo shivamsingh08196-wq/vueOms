@@ -17,7 +17,7 @@ A modern, streamlined Order Management System built with **Laravel 12** and **Vu
 - PHP 8.2 or higher
 - Composer
 - Node.js & npm
-- SQLite (or another preferred database)
+- Mysql (or another preferred database)
 
 ## Installation Process
 
@@ -39,7 +39,6 @@ A modern, streamlined Order Management System built with **Laravel 12** and **Vu
    cp .env.example .env
    php artisan key:generate
    ```
-   Ensure `DB_CONNECTION` is set to your preferred database (e.g., `sqlite` with the database file created).
 
 4. **Run Migrations and Seeders**
    This command sets up your database tables, default roles/permissions, and realistic sample data:
@@ -65,7 +64,7 @@ The project includes comprehensive test suites.
 
 **Backend Tests (Pest):**
 ```bash
-./vendor/bin/pest
+php vendor/bin/pest
 ```
 
 **End-to-End Tests (Playwright):**

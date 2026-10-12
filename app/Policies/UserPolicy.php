@@ -8,7 +8,7 @@ class UserPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('users.manage') || $user->hasRole('admin');
+        return $user->can('users.manage') || $user->can('orders.assign') || $user->hasRole('admin') || $user->hasRole('manager');
     }
 
     public function view(User $user, User $target): bool

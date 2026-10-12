@@ -36,6 +36,13 @@ class AssignPurchaseController extends Controller
             ],
         ]);
 
+        if ($purchase->assigned_to && $purchase->assigned_to !== $user->id) {
+            $assigneeUser = User::find($purchase->assigned_to);
+            if ($assigneeUser) {
+                $assigneeUser->notify(new \App\Notifications\OrderAssignedNotification($purchase));
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Purchase assigned successfully',

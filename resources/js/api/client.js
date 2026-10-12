@@ -29,6 +29,17 @@ export async function request(endpoint, options = {}) {
     } catch {
       // response is not json
     }
+
+    if (response.status === 401 && !endpoint.includes('/api/login')) {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+
     const error = new Error(errorData?.message || `Request failed with status ${response.status}`);
     error.status = response.status;
     error.data = errorData;

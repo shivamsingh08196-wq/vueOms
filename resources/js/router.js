@@ -52,6 +52,11 @@ const routes = [
         path: 'audit-logs',
         name: 'AuditLogs',
         component: () => import('./pages/AuditLogs.vue')
+      },
+      {
+        path: 'notifications',
+        name: 'Notifications',
+        component: () => import('./pages/Notifications.vue')
       }
     ]
   }
@@ -65,10 +70,12 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   const isAuthenticated = authStore.isAuthenticated;
+  const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth);
+  const guestOnly = to.matched.some((record) => record.meta?.guestOnly);
 
-  if (to.meta.requiresAuth && !isAuthenticated) {
+  if (requiresAuth && !isAuthenticated) {
     next('/login');
-  } else if (to.meta.guestOnly && isAuthenticated) {
+  } else if (guestOnly && isAuthenticated) {
     next('/dashboard');
   } else {
     next();

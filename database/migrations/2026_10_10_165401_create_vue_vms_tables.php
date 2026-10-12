@@ -35,6 +35,7 @@ return new class extends Migration
             $table->date('purchase_date');
             $table->decimal('total_amount', 12, 2)->default(0);
             $table->string('status')->default('pending');
+            $table->boolean('stock_reserved')->default(false);
             $table->string('priority')->default('normal');
             $table->text('notes')->nullable();
             $table->timestamps();

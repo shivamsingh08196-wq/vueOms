@@ -1,8 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import api from '../api/client';
+import { useAuthStore } from '../stores/auth';
 
 const emit = defineEmits(['close', 'created']);
+
+const authStore = useAuthStore();
+const canAssign = computed(() => authStore.isAdmin || authStore.isManager || authStore.can('orders.assign'));
 
 const currentStep = ref(1);
 const steps = [
@@ -14,6 +18,7 @@ const steps = [
 // Data sources
 const clients = ref([]);
 const items = ref([]);
+const users = ref([]);
 const isLoadingData = ref(true);
 const isSubmitting = ref(false);
 const errorMessage = ref('');
@@ -22,6 +27,7 @@ const errorMessage = ref('');
 const selectedClientId = ref('');
 const purchaseDate = ref(new Date().toISOString().slice(0, 10));
 const priority = ref('normal');
+const assignedTo = ref('');
 const notes = ref('');
 
 const lines = ref([
@@ -32,18 +38,26 @@ const fetchInitialData = async () => {
   isLoadingData.value = true;
   errorMessage.value = '';
   try {
-    const [clientsRes, itemsRes] = await Promise.all([
+    const promises = [
       api.get('/api/clients?all=1'),
       api.get('/api/items?all=1'),
-    ]);
-    clients.value = Array.isArray(clientsRes) ? clientsRes : (clientsRes.data || []);
-    items.value = Array.isArray(itemsRes) ? itemsRes : (itemsRes.data || []);
+    ];
+    if (canAssign.value) {
+      promises.push(api.get('/api/users?all=1'));
+    }
+
+    const [clientsRes, itemsRes, usersRes] = await Promise.all(promises);
+    clients.value = Array.isArray(clientsRes) ? clientsRes : (clientsRes?.data || []);
+    items.value = Array.isArray(itemsRes) ? itemsRes : (itemsRes?.data || []);
+    if (usersRes) {
+      users.value = Array.isArray(usersRes) ? usersRes : (usersRes?.data || []);
+    }
 
     if (clients.value.length > 0) {
       selectedClientId.value = clients.value[0].id;
     }
   } catch (err) {
-    errorMessage.value = err.message || 'Failed to load clients and items.';
+    errorMessage.value = err.message || 'Failed to load form data.';
   } finally {
     isLoadingData.value = false;
   }
@@ -122,6 +136,7 @@ const submitPurchase = async () => {
       client_id: Number(selectedClientId.value),
       purchase_date: purchaseDate.value,
       priority: priority.value,
+      assigned_to: assignedTo.value ? Number(assignedTo.value) : null,
       notes: notes.value ? notes.value.trim() : null,
       lines: lines.value.map(l => ({
         item_id: Number(l.item_id),
@@ -167,7 +182,7 @@ onMounted(() => {
         <div class="w-60 bg-gray-50/70 border-r border-[var(--color-line)] p-6 hidden md:block">
           <nav aria-label="Progress">
             <ol class="space-y-6">
-              <li v-for="(step, stepIdx) in steps" :key="step.id" class="flex items-start">
+              <li v-for="step in steps" :key="step.id" class="flex items-start">
                 <div class="flex items-center">
                   <span
                     :class="[
@@ -260,6 +275,23 @@ onMounted(() => {
                   <option value="low">Low</option>
                 </select>
               </div>
+            </div>
+
+            <!-- Optional Assignment (Admin / Manager) -->
+            <div v-if="canAssign">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1">
+                Assign To Staff / Manager (Optional)
+              </label>
+              <select
+                v-model="assignedTo"
+                data-testid="create-assignee-select"
+                class="w-full rounded-lg border border-[var(--color-line)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-evergreen)]"
+              >
+                <option value="">Unassigned (Select later)</option>
+                <option v-for="u in users" :key="u.id" :value="String(u.id)">
+                  {{ u.name }} ({{ u.roles?.map(r => r.name || r).join(', ') || u.email }})
+                </option>
+              </select>
             </div>
 
             <div>

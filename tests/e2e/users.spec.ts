@@ -43,7 +43,7 @@ test('admin can navigate to audit logs and view mutation records', async ({ page
 
 test('admin can navigate to reports and view revenue metrics', async ({ page }) => {
   await page.click('text=Reports');
-  await expect(page).toHaveURL(/.*\/reports/);
-  await expect(page.locator('h1')).toContainText('Analytics & Reports');
-  await expect(page.locator('text=Total Revenue')).toBeVisible();
+  await expect(page).toHaveURL(/\/reports/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Reports' })).toBeVisible();
+  await expect(page.getByText('Total Revenue')).toBeVisible();
 });

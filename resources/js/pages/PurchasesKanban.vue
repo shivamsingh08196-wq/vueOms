@@ -380,6 +380,10 @@ onMounted(() => {
               <td class="px-6 py-4">
                 <div class="font-medium text-[var(--color-ink)]">{{ p.client?.name || 'Client #' + p.client_id }}</div>
                 <div v-if="p.client?.email" class="text-xs text-[var(--color-muted)]">{{ p.client.email }}</div>
+                <div class="text-[11px] text-gray-500 flex items-center gap-1.5 mt-1">
+                  <span class="inline-block w-1.5 h-1.5 rounded-full" :class="p.assignee ? 'bg-[var(--color-evergreen)]' : 'bg-gray-300'"></span>
+                  <span>{{ p.assignee?.name ? 'Assigned: ' + p.assignee.name : 'Unassigned' }}</span>
+                </div>
               </td>
               <td class="px-6 py-4 text-xs font-mono text-[var(--color-muted)]">
                 {{ p.purchase_date }}
@@ -490,6 +494,10 @@ onMounted(() => {
                 <span class="text-sm font-bold text-[var(--color-ink)]">${{ Number(p.total_amount || 0).toFixed(2) }}</span>
               </div>
               <p class="text-sm font-medium text-[var(--color-ink)]">{{ p.client?.name || `Client #${p.client_id || 'N/A'}` }}</p>
+              <div class="mt-1.5 text-[11px] text-gray-500 flex items-center gap-1.5">
+                <span class="inline-block w-1.5 h-1.5 rounded-full" :class="p.assignee ? 'bg-[var(--color-evergreen)]' : 'bg-gray-300'"></span>
+                <span>{{ p.assignee?.name ? 'Assigned: ' + p.assignee.name : 'Unassigned' }}</span>
+              </div>
               <div class="mt-3 flex items-center justify-between text-xs text-gray-400">
                 <span>{{ p.purchase_date }}</span>
                 <span class="uppercase font-semibold text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">{{ p.priority || 'normal' }}</span>
@@ -558,7 +566,7 @@ onMounted(() => {
 
     <!-- Modals / Drawers -->
     <SlideOverDrawer v-model="isDetailDrawerOpen" title="Purchase Details">
-      <PurchaseDetail v-if="selectedPurchaseId" :purchaseId="selectedPurchaseId" />
+      <PurchaseDetail v-if="selectedPurchaseId" :purchaseId="selectedPurchaseId" @updated="fetchPurchases" />
     </SlideOverDrawer>
 
     <PurchaseCreateStepper v-if="isCreateStepperOpen" @close="store.closeCreateStepper" @created="handleCreated" />

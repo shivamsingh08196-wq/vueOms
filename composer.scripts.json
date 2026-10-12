@@ -28,8 +28,6 @@
       "pest --compact"
     ],
     "test:unit": "npm run test:unit",
-    "test:e2e": "npm run e2e",
-    "qa": "bash qa-kit/scripts/qa/run-all.sh",
-    "qa:dry": "bash qa-kit/scripts/qa/dry-run.sh 2"
+    "test:e2e": "npm run e2e"
   }
 }

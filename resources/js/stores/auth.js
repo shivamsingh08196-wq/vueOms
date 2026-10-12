@@ -61,20 +61,21 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   const logout = async () => {
+    const currentToken = token.value;
+    user.value = null;
+    token.value = null;
+    isAuthenticated.value = false;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    }
+
     try {
-      if (token.value) {
+      if (currentToken) {
         await api.post('/api/logout');
       }
     } catch {
       // Ignore logout network errors
-    } finally {
-      user.value = null;
-      token.value = null;
-      isAuthenticated.value = false;
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-      }
     }
   };
 

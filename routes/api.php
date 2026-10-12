@@ -52,4 +52,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reports (Admin / Manager)
     Route::get('/reports', App\Http\Controllers\Report\GetReportsController::class);
     Route::get('/reports/export', App\Http\Controllers\Report\ExportReportController::class);
+
+    // Notifications
+    Route::get('/notifications', App\Http\Controllers\Notification\GetNotificationsController::class);
+    Route::get('/notifications/unread-count', App\Http\Controllers\Notification\GetUnreadCountController::class);
+    Route::post('/notifications/read-all', App\Http\Controllers\Notification\MarkAllNotificationsReadController::class);
+    Route::post('/notifications/{id}/read', App\Http\Controllers\Notification\MarkNotificationReadController::class);
 });

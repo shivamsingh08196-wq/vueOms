@@ -1,6 +1,7 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import api from '../api/client';
+import { useAuthStore } from '../stores/auth';
 
 const props = defineProps({
   purchaseId: {
@@ -9,17 +10,50 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['updated']);
+
+const authStore = useAuthStore();
+const canAssign = computed(() => authStore.isAdmin || authStore.isManager || authStore.can('orders.assign'));
+
 const purchase = ref(null);
 const isLoading = ref(true);
 const errorMessage = ref('');
+
+// Assign state
+const users = ref([]);
+const isLoadingUsers = ref(false);
+const isEditingAssignee = ref(false);
+const selectedAssigneeId = ref('');
+const isSavingAssignee = ref(false);
+const assignError = ref('');
+const assignSuccessMessage = ref('');
+
+const fetchUsers = async () => {
+  if (!canAssign.value || users.value.length > 0) return;
+  isLoadingUsers.value = true;
+  try {
+    const res = await api.get('/api/users?all=1');
+    users.value = Array.isArray(res) ? res : (res.data || []);
+  } catch (err) {
+    console.error('Failed to load users for assignment:', err);
+  } finally {
+    isLoadingUsers.value = false;
+  }
+};
 
 const fetchPurchase = async () => {
   if (!props.purchaseId) return;
   isLoading.value = true;
   errorMessage.value = '';
+  assignSuccessMessage.value = '';
+  assignError.value = '';
   try {
     const data = await api.get(`/api/purchases/${props.purchaseId}`);
     purchase.value = data.data || data;
+    selectedAssigneeId.value = purchase.value.assigned_to ? String(purchase.value.assigned_to) : '';
+    if (canAssign.value) {
+      fetchUsers();
+    }
   } catch (err) {
     errorMessage.value = err.message || 'Failed to load purchase details.';
   } finally {
@@ -27,7 +61,48 @@ const fetchPurchase = async () => {
   }
 };
 
+const startEditingAssignee = () => {
+  selectedAssigneeId.value = purchase.value.assigned_to ? String(purchase.value.assigned_to) : '';
+  isEditingAssignee.value = true;
+  assignError.value = '';
+  assignSuccessMessage.value = '';
+  fetchUsers();
+};
+
+const cancelEditingAssignee = () => {
+  isEditingAssignee.value = false;
+  selectedAssigneeId.value = purchase.value.assigned_to ? String(purchase.value.assigned_to) : '';
+  assignError.value = '';
+};
+
+const saveAssignment = async () => {
+  isSavingAssignee.value = true;
+  assignError.value = '';
+  assignSuccessMessage.value = '';
+  try {
+    const res = await api.post(`/api/purchases/${props.purchaseId}/assign`, {
+      assigned_to: selectedAssigneeId.value ? Number(selectedAssigneeId.value) : null,
+    });
+    if (res && res.data) {
+      purchase.value = res.data;
+    } else {
+      await fetchPurchase();
+    }
+    assignSuccessMessage.value = 'Assignment updated successfully.';
+    isEditingAssignee.value = false;
+    emit('updated', purchase.value);
+    setTimeout(() => {
+      assignSuccessMessage.value = '';
+    }, 4000);
+  } catch (err) {
+    assignError.value = err.message || 'Failed to update assignment.';
+  } finally {
+    isSavingAssignee.value = false;
+  }
+};
+
 watch(() => props.purchaseId, () => {
+  isEditingAssignee.value = false;
   fetchPurchase();
 });
 
@@ -88,9 +163,66 @@ onMounted(() => {
           <dt class="font-semibold text-gray-500">Email</dt>
           <dd class="text-gray-700">{{ purchase.client?.email || 'N/A' }}</dd>
         </div>
-        <div class="py-2.5 flex justify-between">
-          <dt class="font-semibold text-gray-500">Assigned To</dt>
-          <dd class="font-medium text-gray-900">{{ purchase.assignee?.name || 'Unassigned' }}</dd>
+        <!-- Assigned To -->
+        <div class="py-2.5">
+          <div class="flex justify-between items-center">
+            <dt class="font-semibold text-gray-500">Assigned To</dt>
+            <dd class="flex items-center gap-2">
+              <span class="font-medium text-gray-900" data-testid="assignee-name">
+                {{ purchase.assignee?.name || 'Unassigned' }}
+              </span>
+              <button
+                v-if="canAssign && !isEditingAssignee"
+                type="button"
+                @click="startEditingAssignee"
+                class="text-xs font-semibold text-[var(--color-evergreen)] hover:underline inline-flex items-center gap-1"
+                data-testid="edit-assignee-btn"
+              >
+                <span>{{ purchase.assigned_to ? 'Change' : 'Assign' }}</span>
+              </button>
+            </dd>
+          </div>
+
+          <!-- Assignment Edit Form -->
+          <div v-if="canAssign && isEditingAssignee" class="mt-2 p-2.5 bg-gray-50 rounded-lg border border-[var(--color-line)] space-y-2">
+            <div v-if="assignError" class="text-[11px] text-red-600">
+              {{ assignError }}
+            </div>
+            <div class="flex items-center gap-2">
+              <select
+                v-model="selectedAssigneeId"
+                data-testid="assignee-select"
+                class="flex-1 rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-xs text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-evergreen)]"
+                :disabled="isSavingAssignee"
+              >
+                <option value="">Unassigned (None)</option>
+                <option v-for="u in users" :key="u.id" :value="String(u.id)">
+                  {{ u.name }} ({{ u.roles?.map(r => r.name || r).join(', ') || u.email }})
+                </option>
+              </select>
+              <button
+                type="button"
+                data-testid="save-assignee-btn"
+                :disabled="isSavingAssignee"
+                @click="saveAssignment"
+                class="rounded-md bg-[var(--color-evergreen)] px-2.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {{ isSavingAssignee ? 'Saving...' : 'Save' }}
+              </button>
+              <button
+                type="button"
+                :disabled="isSavingAssignee"
+                @click="cancelEditingAssignee"
+                class="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+
+          <div v-if="assignSuccessMessage" class="mt-1 text-[11px] text-emerald-600 font-medium">
+            ✓ {{ assignSuccessMessage }}
+          </div>
         </div>
         <div class="py-2.5 flex justify-between">
           <dt class="font-semibold text-gray-500">Total Amount</dt>

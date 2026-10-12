@@ -12,6 +12,15 @@ class GetUsersController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
+        // If all users requested without pagination (e.g. for assignment dropdowns)
+        if ($request->boolean('all') || $request->input('per_page') === 'all') {
+            $allUsers = User::with('roles')->orderBy('name', 'asc')->get();
+            return response()->json([
+                'data' => $allUsers,
+                'total' => $allUsers->count(),
+            ]);
+        }
+
         $query = User::with('roles');
 
         if ($search = $request->input('search')) {

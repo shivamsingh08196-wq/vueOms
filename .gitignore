@@ -7,6 +7,7 @@
 /storage/pail
 /vendor
 .env
+.env.testing
 .env.backup
 .env.production
 .phpactor.json
@@ -40,4 +41,4 @@ CLAUDE.md
 GEMINI.md
 playwright-report/
 test-results/
-qa-kit/
+qa-kit/.env.testing
