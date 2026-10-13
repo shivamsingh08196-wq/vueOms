@@ -105,15 +105,6 @@ The seeder creates the following sample data:
 | Purchases | Sample purchase records with predefined dates |
 | Roles and permissions | Default RBAC configuration |
 
-Purchase statuses include:
-
-- `pending`
-- `confirmed`
-- `processing`
-- `ready`
-- `completed`
-- `cancelled`
-
 Item prices, stock quantities, and other sample fields are populated by the seeders.
 
 ## Default Login Credentials
@@ -155,14 +146,6 @@ php artisan serve
 ```
 
 Open the application in your browser:
-
-`http://localhost:8000`
-
-If the project uses a separate frontend development server, start it in another terminal:
-
-```bash
-npm run dev
-```
 
 ## Testing
 
@@ -249,7 +232,3 @@ npm run build
 ### Permission or Role Issues
 
 If you have modified the roles or permissions seeder, rerun the seeders as appropriate. Remember that `migrate:fresh --seed` deletes and recreates existing tables.
-
-## License
-
-Add the project's applicable license information here.
