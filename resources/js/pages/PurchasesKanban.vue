@@ -37,6 +37,86 @@ const statusRemarks = ref('');
 const isSavingStatus = ref(false);
 const statusError = ref('');
 
+// Drag & Drop State
+const draggedPurchase = ref(null);
+const dragOverColumn = ref(null);
+
+// Map each kanban column id → the status value to assign when dropped there
+const columnStatusMap = {
+  pending: 'pending',
+  in_progress: 'confirmed',
+  completed: 'completed',
+  cancelled: 'cancelled',
+};
+
+const onDragStart = (purchase, event) => {
+  draggedPurchase.value = purchase;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', String(purchase.id));
+  // Make the dragged element semi-transparent
+  event.target.style.opacity = '0.5';
+};
+
+const onDragEnd = (event) => {
+  event.target.style.opacity = '1';
+  draggedPurchase.value = null;
+  dragOverColumn.value = null;
+};
+
+const onDragOver = (columnId, event) => {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  dragOverColumn.value = columnId;
+};
+
+const onDragLeave = (columnId, event) => {
+  // Only clear if we're leaving the column container itself, not entering a child
+  if (!event.currentTarget.contains(event.relatedTarget)) {
+    if (dragOverColumn.value === columnId) {
+      dragOverColumn.value = null;
+    }
+  }
+};
+
+const onDrop = async (columnId, event) => {
+  event.preventDefault();
+  dragOverColumn.value = null;
+
+  const purchase = draggedPurchase.value;
+  if (!purchase) return;
+
+  const newStatus = columnStatusMap[columnId];
+  if (!newStatus) return;
+
+  // Don't do anything if dropped on the same column it came from
+  const currentStatus = (purchase.status || 'pending').toLowerCase();
+  const sourceColumnId = Object.entries(columnStatusMap).find(([, s]) => {
+    if (s === currentStatus) return true;
+    // Handle statuses that share a column
+    if (columnId === 'in_progress' && ['confirmed', 'processing', 'ready'].includes(currentStatus)) return false;
+    return false;
+  });
+
+  // Check if the purchase is already in the target column
+  const targetColumn = columns.value.find(c => c.id === columnId);
+  if (targetColumn && targetColumn.purchases.some(p => p.id === purchase.id)) {
+    draggedPurchase.value = null;
+    return;
+  }
+
+  try {
+    await api.post(`/api/purchases/${purchase.id}/status`, {
+      status: newStatus,
+      remarks: `Status changed to ${newStatus} via kanban drag-and-drop`,
+    });
+    await fetchPurchases();
+  } catch (err) {
+    errorMessage.value = err.message || `Failed to move purchase to ${columnId}.`;
+  } finally {
+    draggedPurchase.value = null;
+  }
+};
+
 let debounceTimer = null;
 
 const fetchPurchases = async () => {
@@ -471,7 +551,15 @@ onMounted(() => {
         <div
           v-for="col in columns"
           :key="col.id"
-          class="w-80 flex-shrink-0 bg-gray-50 rounded-xl p-4 border border-[var(--color-line)] min-h-[500px]"
+          @dragover="onDragOver(col.id, $event)"
+          @dragleave="onDragLeave(col.id, $event)"
+          @drop="onDrop(col.id, $event)"
+          :class="[
+            'w-80 flex-shrink-0 rounded-xl p-4 border min-h-[500px] transition-all duration-200',
+            dragOverColumn === col.id
+              ? 'bg-emerald-50 border-[var(--color-evergreen)] border-2 ring-2 ring-[var(--color-evergreen)]/20'
+              : 'bg-gray-50 border-[var(--color-line)]'
+          ]"
         >
           <div class="flex items-center justify-between mb-3">
             <h3 class="text-sm font-bold text-[var(--color-ink)]">{{ col.name }}</h3>
@@ -479,15 +567,23 @@ onMounted(() => {
           </div>
 
           <div v-if="col.purchases.length === 0" class="p-6 text-center text-xs text-gray-400 border border-dashed border-gray-200 rounded-lg">
-            No purchases in this stage
+            <template v-if="dragOverColumn === col.id">
+              <span class="text-[var(--color-evergreen)] font-semibold">Drop here to move</span>
+            </template>
+            <template v-else>
+              No purchases in this stage
+            </template>
           </div>
 
           <div v-else class="space-y-3">
             <div
               v-for="p in col.purchases"
               :key="p.id"
+              draggable="true"
+              @dragstart="onDragStart(p, $event)"
+              @dragend="onDragEnd($event)"
               @click="store.openPurchaseDetail(p.id)"
-              class="bg-white p-4 rounded-xl shadow-sm border border-[var(--color-line)] cursor-pointer hover:border-[var(--color-evergreen)] hover:shadow-md transition-all"
+              class="bg-white p-4 rounded-xl shadow-sm border border-[var(--color-line)] cursor-grab hover:border-[var(--color-evergreen)] hover:shadow-md transition-all active:cursor-grabbing"
             >
               <div class="flex justify-between items-start mb-2">
                 <span class="font-bold text-[var(--color-evergreen)] font-mono text-sm">#{{ p.purchase_number || p.id }}</span>
